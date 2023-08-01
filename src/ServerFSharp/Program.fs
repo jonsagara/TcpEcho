@@ -74,7 +74,7 @@ module Program =
 
     let private processLine (buffer : inref<ReadOnlySequence<byte>>) =
         for segment in buffer do
-            printfn "%s" (Encoding.UTF8.GetString(segment.Span))
+            printf "%s" (Encoding.UTF8.GetString(segment.Span))
 
         printfn ""
 
@@ -140,19 +140,13 @@ module Program =
 
             listenSocket.Listen(backlog = 120)
 
-            let mutable continueLooping = true
+            while true do
+                let! socket = listenSocket.AcceptAsync()
+                
+                // We don't await the task. We start it and let it continue, returning immediately so that we
+                //   can accept and process any new connections.
+                processLinesAsync socket |> ignore
 
-            while continueLooping do
-                (*
-                var socket = await listenSocket.AcceptAsync();
-                _ = ProcessLinesAsync(socket);
-                *)
-                use! socket = listenSocket.AcceptAsync()
-                do! processLinesAsync socket
-
-                continueLooping <- false
-
-            ()
         }
     
     [<EntryPoint>]
